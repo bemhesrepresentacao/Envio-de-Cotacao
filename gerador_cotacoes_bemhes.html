@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerador de Cotações | Bemhes Representação</title>
+<style>
+:root{--navy:#070A0F;--panel:#0F172A;--blue:#0052D4;--green:#22C55E;--white:#F8FAFC;--muted:#94A3B8;--line:#263449}
+*{box-sizing:border-box}body{margin:0;background:#eef2f7;color:#172033;font:15px Arial,sans-serif}
+header{background:var(--navy);color:white;padding:25px 18px;text-align:center}header h1{margin:0 0 7px;font-size:24px}header p{margin:0;color:#cbd5e1}
+main{max-width:1100px;margin:24px auto;padding:0 14px;display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.85fr);gap:18px}
+.card{background:white;border-radius:14px;padding:20px;box-shadow:0 5px 22px #0f172a12}
+h2{font-size:18px;margin:0 0 16px;color:#0f172a}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}.full{grid-column:1/-1}label{font-weight:700;font-size:13px;color:#334155}
+input,select,textarea{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;background:#fff}
+input:focus,textarea:focus{outline:2px solid #93c5fd;border-color:var(--blue)}
+small{color:#64748b}.calc{background:#f1f5f9;border-radius:10px;padding:14px;margin-top:14px;line-height:1.8}
+.calc strong{color:#0f172a}.special{color:#15803d}
+.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px}
+button{border:0;border-radius:9px;padding:12px 15px;font-weight:700;cursor:pointer;color:white;background:var(--blue)}
+button.whats{background:#16a34a}button.email{background:#334155}button.copy{background:#64748b}
+.preview{white-space:pre-wrap;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;min-height:280px;font-family:Arial,sans-serif;line-height:1.55}
+.note{font-size:12px;color:#64748b;line-height:1.5;margin-top:14px}
+@media(max-width:800px){main{grid-template-columns:1fr}.grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<header><h1>Gerador de Cotações</h1><p>Bemhes Representação | Tecnologia em lubrificação, proteção e performance</p></header>
+<main>
+<section class="card">
+<h2>Dados da cotação</h2>
+<div class="grid">
+<div class="field full"><label for="produto">Produto</label><input id="produto" value="SWOOP" placeholder="Nome do produto"></div>
+<div class="field"><label for="descricao">Complemento / descrição</label><input id="descricao" placeholder="Ex.: bombona 20 litros"></div>
+<div class="field"><label for="quantidade">Quantidade</label><input id="quantidade" type="number" min="0" step="0.01" value="20"></div>
+<div class="field"><label for="unidade">Unidade</label><input id="unidade" value="Lt" placeholder="Lt, Kg, un..."></div>
+<div class="field"><label for="embalagem">Embalagem</label><input id="embalagem" value="1X20Lt" placeholder="Ex.: 1X20Lt"></div>
+<div class="field"><label for="especial">Preço especial unitário (R$)</label><input id="especial" type="number" min="0" step="0.01" value="84.00"></div>
+<div class="field"><label for="acrescimo">Acréscimo sobre preço especial (%)</label><input id="acrescimo" type="number" min="0" step="0.01" value="7"></div>
+<div class="field"><label for="ipi">IPI (%)</label><input id="ipi" type="number" min="0" step="0.01" value="3.25"></div>
+<div class="field"><label for="icms">ICMS / outro adicional (%)</label><input id="icms" type="number" min="0" step="0.01" value="0"></div>
+<div class="field"><label for="cotacao">Cotação nº</label><input id="cotacao" value="2026-060"></div>
+<div class="field"><label for="pagamento">Prazo de pagamento</label><input id="pagamento" value="28 dias"></div>
+<div class="field"><label for="validade">Proposta válida até</label><input id="validade" type="date" value="2026-11-15"></div>
+<div class="field"><label for="saudacao">Saudação</label><select id="saudacao"><option>Boa tarde!</option><option>Bom dia!</option><option>Boa noite!</option></select></div>
+<div class="field"><label for="cliente">Nome do cliente (opcional)</label><input id="cliente" placeholder="Nome / empresa"></div>
+<div class="field"><label for="whatsapp">WhatsApp do destinatário</label><input id="whatsapp" placeholder="DDD + número (somente números)"></div>
+<div class="field full"><label for="email">E-mail do destinatário</label><input id="email" type="email" placeholder="cliente@empresa.com.br"></div>
+</div>
+<div class="calc" id="calculo" aria-live="polite"></div>
+<div class="actions">
+<button class="whats" onclick="enviarWhats()">Enviar via WhatsApp</button>
+<button class="email" onclick="enviarEmail()">Enviar via e-mail</button>
+<button class="copy" onclick="copiar()">Copiar texto</button>
+</div>
+<p class="note">O preço unitário apresentado é calculado automaticamente como preço especial + percentual de acréscimo. Os totais aplicam IPI e ICMS sobre o subtotal (quantidade × preço unitário). O envio por e-mail abre o aplicativo de e-mail padrão com o texto preenchido; para anexar um PDF, será necessário anexá-lo manualmente ou integrar o site a um serviço de envio.</p>
+</section>
+<section class="card">
+<h2>Prévia da mensagem</h2>
+<div class="preview" id="previa"></div>
+</section>
+</main>
+<script>
+const ids=['produto','descricao','quantidade','unidade','embalagem','especial','acrescimo','ipi','icms','cotacao','pagamento','validade','saudacao','cliente','whatsapp','email'];
+const el=id=>document.getElementById(id);
+const num=id=>Math.max(0,Number(el(id).value)||0);
+const money=v=>v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct=v=>Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const dateBR=s=>{if(!s)return '';const [y,m,d]=s.split('-');return `${d}/${m}/${y}`};
+function dados(){
+ const q=num('quantidade'), especial=num('especial'), acresc=num('acrescimo'), ipi=num('ipi'),icms=num('icms');
+ const preco=especial*(1+acresc/100);
+ const fator=1+(ipi+icms)/100;
+ return {q,especial,preco,ipi,icms,total: q*preco*fator,totalEsp:q*especial*fator};
+}
+function mensagem(){
+ const d=dados(), produto=el('produto').value.trim()||'—', desc=el('descricao').value.trim();
+ const un=el('unidade').value.trim(), emb=el('embalagem').value.trim();
+ const qtd=`${String(d.q).replace('.',',')}/${un}${emb?` (${emb})`:''}`;
+ const nome=el('cliente').value.trim();
+ return `${el('saudacao').value} ${nome?nome+',':''}\nSegue cotação solicitada!\n\n*PRODUTO:* ${produto}${desc?' - '+desc:''}\n*QUANTIDADE:* ${qtd}\n*PREÇO:* R$${money(d.preco)}/${un} + ${pct(d.ipi)}% + ${pct(d.icms)}% = R$${money(d.total)}\n*PREÇO ESPECIAL: R$${money(d.especial)}/${un} + ${pct(d.ipi)}% + ${pct(d.icms)}% = R$${money(d.totalEsp)}*\n\n*Cotação nº:* ${el('cotacao').value}\n*Prazo de pagamento:* ${el('pagamento').value}\n*Proposta válida até:* ${dateBR(el('validade').value)}`;
+}
+function atualizar(){
+ const d=dados();
+ el('calculo').innerHTML=`Preço unitário calculado: <strong>R$ ${money(d.preco)}</strong><br>Preço especial unitário: <strong class="special">R$ ${money(d.especial)}</strong><br>Total com impostos (preço): <strong>R$ ${money(d.total)}</strong><br>Total com impostos (especial): <strong class="special">R$ ${money(d.totalEsp)}</strong>`;
+ el('previa').textContent=mensagem();
+}
+function enviarWhats(){
+ const f=el('whatsapp').value.replace(/\D/g,'');
+ if(!f){alert('Informe o WhatsApp do destinatário com DDD.');return}
+ window.open('https://wa.me/'+f+'?text='+encodeURIComponent(mensagem()),'_blank');
+}
+function enviarEmail(){
+ const email=el('email').value.trim();
+ if(!email){alert('Informe o e-mail do destinatário.');return}
+ const assunto=`Cotação ${el('cotacao').value} - ${el('produto').value}`;
+ window.location.href='mailto:'+encodeURIComponent(email)+'?subject='+encodeURIComponent(assunto)+'&body='+encodeURIComponent(mensagem());
+}
+async function copiar(){
+ try{await navigator.clipboard.writeText(mensagem());alert('Texto da cotação copiado!')}
+ catch(e){alert('Não foi possível copiar automaticamente. Selecione e copie o texto da prévia.')}
+}
+ids.forEach(id=>el(id).addEventListener('input',atualizar));
+atualizar();
+</script>
+</body>
+</html>
